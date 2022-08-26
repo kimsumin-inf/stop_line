@@ -17,6 +17,7 @@
 #include <sensor_msgs/Image.h>
 #include <std_msgs/Int16.h>
 
+
 class SLD{
 private:
     void cam_CB(const sensor_msgs::Image::ConstPtr &msg);
@@ -26,7 +27,11 @@ private:
     double medianMat(cv::Mat Input);
     void return_thresh(int &low, int &high, double sigma, double mid);
     cv::Mat return_Canny(cv::Mat frame, int low, int high);
+    cv::Mat return_byv(cv::Mat frame );
+
     double euclidean_distance(cv::Point pt1, cv::Point pt2);
+    inline double calc_theta(cv::Point pt1, cv::Point pt2);
+    cv::Mat calibrated(cv::Mat frame);
     void show(std::string frame_name, cv::Mat frame, int waitkey);
     void clear();
 
@@ -38,10 +43,15 @@ private:
     cv::Mat base_frame;
     cv::Mat gray_frame;
     cv::Mat canny_frame;
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    cv::Mat map1, map2;
     cv_bridge::CvImagePtr cv_ptr;
     double middle_value;
     int low, high;
     int steer;
+
+
 public:
     SLD();
 
