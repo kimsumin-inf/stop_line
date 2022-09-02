@@ -28,7 +28,7 @@ private:
     void return_thresh(int &low, int &high, double sigma, double mid);
     cv::Mat return_Canny(cv::Mat frame, int low, int high);
     cv::Mat return_byv(cv::Mat frame );
-
+    cv::Mat return_rebyv(cv::Mat frame );
     double euclidean_distance(cv::Point pt1, cv::Point pt2);
     inline double calc_theta(cv::Point pt1, cv::Point pt2);
     cv::Mat calibrated(cv::Mat frame);
@@ -47,6 +47,8 @@ private:
     cv::Mat distCoeffs;
     cv::Mat map1, map2;
     cv_bridge::CvImagePtr cv_ptr;
+    std::vector<cv::Point> points;
+
     double middle_value;
     int low, high;
     int steer;

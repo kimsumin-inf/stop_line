@@ -43,22 +43,50 @@ void SLD::cam_CB(const sensor_msgs::Image::ConstPtr &msg) {
     Mat sobel_frame;
     Sobel(bin_frame, sobel_frame,-1, 0,1);
     vector<Vec4i> lines_bin;
-    vector<Vec4i> lines_canny;
+
     HoughLinesP(sobel_frame, lines_bin, 1, CV_PI/180, 10 ,100, 10);
 
     Mat lines(base_frame.rows, base_frame.cols, CV_8UC3, Scalar(0,0,0));
+    points.clear();
     for (auto i : lines_bin){
-        if (calc_theta(Point(i[0],i[1]), Point(i[2],i[3]))<3  && euclidean_distance(Point(i[0],i[1]), Point(i[2],i[3]))> 300 ){
-            cout << "theta1:  "<< calc_theta(Point(i[0],i[1]), Point(i[2],i[3]))<<endl;
-            line(lines, Point(i[0],i[1]), Point(i[2],i[3]), Scalar(0,0,255),1,LINE_AA);
+        if (calc_theta(Point(i[0],i[1]), Point(i[2],i[3]))<3  ){
+            points.push_back(Point(i[0],i[1]));
+            points.push_back(Point(i[2],i[3]));
         }
+    }
+    for (auto i: points){
+        circle(base_frame, i,3, Scalar(0,0,255), 2, 8);
+    }
+    Vec4f line_para;
+    if (points.size()>3) {
+        fitLine(points, line_para, DIST_L2, 0, 1e-2, 1e-2);
+        cout << "line_para: " << line_para << endl;
+
+
+        Point pt0;
+        pt0.x = line_para[2];
+        pt0.y = line_para[3];
+        double k = line_para[1] / line_para[0];
+
+        Point pt1, pt2;
+        pt1.x = 0;
+        pt1.y = k * (0 - pt0.x) + pt0.y;
+        pt2.x = 1280;
+        pt2.y = k * (1280 - pt0.x) + pt0.y;
+
+        line(base_frame, pt1, pt2, Scalar(0, 255, 0), 2, 8, 0);
+        base_frame= return_rebyv(base_frame);
+        show("base_frame", base_frame, 1);
+
+
+    }
+    else {
+        base_frame= return_rebyv(base_frame);
+        show("base_frame", base_frame, 1);
     }
 
 
-    show("l", l_frame,1);
-    show("bin_frame",bin_frame,1);
-    show("sobel_frame", sobel_frame,1);
-    show("lines",lines,1);
+
 
     clear();
 
@@ -114,15 +142,11 @@ Mat SLD::return_byv(cv::Mat frame) {
     int width  = frame.cols;
     int height = frame.rows;
     vector<Point2f> ps(4);
-    ps[0] = Point2f(width/2 - 200, 0);
-    ps[1] = Point2f(width/2 + 200, 0);
+    ps[0] = Point2f(width/2 - 200, 20);
+    ps[1] = Point2f(width/2 + 200, 20);
     ps[2] = Point2f(-880, height);
     ps[3] = Point2f(2160, height);
 
-    circle(frame, ps[0], 2, Scalar(0,0,255),2);
-    circle(frame, ps[1], 2, Scalar(0,0,255),2);
-    circle(frame, ps[2], 2, Scalar(0,0,255),2);
-    circle(frame, ps[3], 2, Scalar(0,0,255),2);
     vector<Point2f> pd(4);
     pd[0] = Point2f(0,0);
     pd[1] = Point2f(width,0);
@@ -131,6 +155,28 @@ Mat SLD::return_byv(cv::Mat frame) {
 
 
     Mat perspective = getPerspectiveTransform(ps, pd);
+    Mat tmp;
+    warpPerspective(frame, tmp, perspective, Size(width, height), INTER_LINEAR);
+    return tmp;
+
+}
+Mat SLD::return_rebyv(cv::Mat frame) {
+    int width  = frame.cols;
+    int height = frame.rows;
+    vector<Point2f> ps(4);
+    ps[0] = Point2f(width/2 - 200, 20);
+    ps[1] = Point2f(width/2 + 200, 20);
+    ps[2] = Point2f(-880, height);
+    ps[3] = Point2f(2160, height);
+
+    vector<Point2f> pd(4);
+    pd[0] = Point2f(0,0);
+    pd[1] = Point2f(width,0);
+    pd[2] = Point2f(0, height);
+    pd[3] = Point2f(width, height);
+
+
+    Mat perspective = getPerspectiveTransform(pd, ps);
     Mat tmp;
     warpPerspective(frame, tmp, perspective, Size(width, height), INTER_LINEAR);
     return tmp;
